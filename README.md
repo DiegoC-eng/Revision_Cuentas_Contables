@@ -19,3 +19,5 @@ Dashboard interactivo de **Cuentas Controlables** (Walmart CAM Costa Rica).
 - **Var. $** = Real - Plan  (positivo = sobre-gasto)
 
 Fuente: `Cuentas Controlables BF CR 2026.xlsb`.
+  
+Ultimo forzado de rebuild: 2026-08-06  8:36:55,03  
