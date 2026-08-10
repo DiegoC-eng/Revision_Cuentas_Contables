@@ -39,9 +39,9 @@ Actualización: 07/08/2026 15:04
     </select>
   </div>
   <div>
-    <label class="block text-xs font-semibold text-gray-500 uppercase mb-1" for="mes">Periodo</label>
-    <select id="mes" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#0053e2] focus:outline-none">
-      <option value="-1">Acumulado (YTD)</option>
+    <label class="block text-xs font-semibold text-gray-500 uppercase mb-1" for="mes">Periodo <span class="normal-case font-normal text-gray-400">(Ctrl/Cmd+clic = varios)</span></label>
+    <select id="mes" multiple size="5" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#0053e2] focus:outline-none">
+      <option value="__ALL__" selected>Seleccionar Todo</option>
     </select>
   </div>
   <div>
@@ -129,7 +129,7 @@ const pct = x => x===null ? "&mdash;" : (x*100).toFixed(1) + "%";
 const sum = a => a.reduce((s,v)=>s+v,0);
 
 function ccre(x){ if(x===null)return"text-gray-400"; if(x<=0)return"text-[#2a8703] font-semibold"; if(x<=0.15)return"text-[#995213] font-semibold"; return"text-[#ea1100] font-semibold"; }
-function calc(x){ if(x===null)return"text-gray-400"; if(x>=1)return"text-[#2a8703] font-semibold"; if(x>=0.9)return"text-[#995213] font-semibold"; return"text-[#ea1100] font-semibold"; }
+function calc(x){ if(x===null)return"text-gray-400"; if(x<=1)return"text-[#2a8703] font-semibold"; if(x<=1.1)return"text-[#995213] font-semibold"; return"text-[#ea1100] font-semibold"; }
 function cvar(x){ return x>0?"text-[#ea1100] font-semibold":(x<0?"text-[#2a8703] font-semibold":"text-gray-500"); }
 
 // formato = macro-formato del negocio: MaxiPali (MP/MAXI) = Bodegas; resto = Descuentos
@@ -138,13 +138,16 @@ function formato(nombre){
   return (first==="MP"||first==="MAXI")?"Bodegas":"Descuentos";
 }
 
-// valores segun periodo: m=-1 acumulado, si no indice de mes
-function vals(t,m){
-  if(m<0) return {ly:sum(t.ly),ty:sum(t.real),plan:sum(t.plan)};
-  return {ly:t.ly[m],ty:t.real[m],plan:t.plan[m]};
+// valores segun periodo: suma los meses seleccionados (uno, varios, o todos)
+function vals(t,meses){
+  return {
+    ly: sum(meses.map(m=>t.ly[m]||0)),
+    ty: sum(meses.map(m=>t.real[m]||0)),
+    plan: sum(meses.map(m=>t.plan[m]||0)),
+  };
 }
 function met(v){
-  return {...v, crec:v.ly?v.ty/v.ly-1:null, alc:v.ty?v.plan/v.ty:null, vr:v.ty-v.plan};
+  return {...v, crec:v.ly?v.ty/v.ly-1:null, alc:v.plan?v.ty/v.plan:null, vr:v.ty-v.plan};
 }
 
 function tiendasFiltradas(){
@@ -171,7 +174,33 @@ function poblarSr(){
   if([...$("sr").options].some(o=>o.value===cur)) $("sr").value=cur;
 }
 function poblarMes(){
-  $("mes").innerHTML='<option value="-1">Acumulado (YTD)</option>'+MESES.map((mn,i)=>`<option value="${i}">${mn}</option>`).join("");
+  $("mes").innerHTML='<option value="__ALL__" selected>Seleccionar Todo</option>'+MESES.map((mn,i)=>`<option value="${i}">${mn}</option>`).join("");
+}
+
+// Multiselect de Periodo: un clic normal en una opcion limpia las demas (comportamiento nativo
+// del navegador); aqui solo resolvemos los casos especiales de "Seleccionar Todo" para que el
+// filtro nunca quede vacio y para que "Todo" se comporte como un verdadero "seleccionar todos".
+let mesPrev=["__ALL__"];
+function mesesSeleccionados(){
+  const elegidos=[...$("mes").selectedOptions].map(o=>o.value).filter(v=>v!=="__ALL__");
+  return elegidos.length ? elegidos.map(v=>parseInt(v,10)).sort((a,b)=>a-b) : MESES.map((_,i)=>i);
+}
+function mesOnChange(){
+  const sel=$("mes");
+  let cur=[...sel.selectedOptions].map(o=>o.value);
+  const allJustAdded = cur.includes("__ALL__") && !mesPrev.includes("__ALL__");
+  const allJustRemoved = !cur.includes("__ALL__") && mesPrev.includes("__ALL__");
+  if(allJustAdded){
+    cur=["__ALL__",...MESES.map((_,i)=>String(i))];
+  } else if(cur.includes("__ALL__") && cur.length>1 && !allJustRemoved){
+    cur=cur.filter(v=>v!=="__ALL__");
+  }
+  if(cur.length===0){
+    cur=["__ALL__",...MESES.map((_,i)=>String(i))];
+  }
+  [...sel.options].forEach(o=>{o.selected=cur.includes(o.value);});
+  mesPrev=cur;
+  render();
 }
 function poblarFormato(){
   const c=$("cuenta").value;
@@ -184,12 +213,13 @@ function poblarFormato(){
 
 let chart=null;
 function render(){
-  const m=parseInt($("mes").value);
-  const periodo = m<0 ? "Acumulado YTD" : MESES[m];
+  const meses=mesesSeleccionados();
+  const todosMeses = meses.length===MESES.length;
+  const periodo = todosMeses ? "Todos los meses" : meses.map(i=>MESES[i]).join(", ");
   const base=tiendasFiltradas();
 
   // filas tienda enriquecidas
-  const rows=base.map(t=>({tienda:t.tienda,ceco:t.ceco,sr:t.sr,...met(vals(t,m))}));
+  const rows=base.map(t=>({tienda:t.tienda,ceco:t.ceco,sr:t.sr,...met(vals(t,meses))}));
 
   // totales
   const T=met({ly:sum(rows.map(r=>r.ly)),ty:sum(rows.map(r=>r.ty)),plan:sum(rows.map(r=>r.plan))});
@@ -198,7 +228,7 @@ function render(){
   $("kpis").innerHTML=`
    <div class="bg-white rounded-xl shadow p-4 border-l-4 border-[#0053e2]"><p class="text-xs text-gray-500 uppercase">Gasto TY (${periodo})</p><p class="text-2xl font-bold text-[#0053e2]">${money(T.ty)}</p><p class="text-xs text-gray-500">LY ${money(T.ly)} &middot; Plan ${money(T.plan)}</p></div>
    <div class="bg-white rounded-xl shadow p-4 border-l-4 border-[#0b1f3a]"><p class="text-xs text-gray-500 uppercase">Crecimiento vs LY</p><p class="text-2xl font-bold ${ccre(T.crec)}">${pct(T.crec)}</p><p class="text-xs text-gray-500">TY ${money(T.ty)} vs LY ${money(T.ly)}</p></div>
-   <div class="bg-white rounded-xl shadow p-4 border-l-4 border-[#ffc220]"><p class="text-xs text-gray-500 uppercase">Alcance (logro)</p><p class="text-2xl font-bold ${calc(T.alc)}">${pct(T.alc)}</p><p class="text-xs text-gray-500">Plan/Real</p></div>
+   <div class="bg-white rounded-xl shadow p-4 border-l-4 border-[#ffc220]"><p class="text-xs text-gray-500 uppercase">Alcance (logro)</p><p class="text-2xl font-bold ${calc(T.alc)}">${pct(T.alc)}</p><p class="text-xs text-gray-500">Real/Plan</p></div>
    <div class="bg-white rounded-xl shadow p-4 border-l-4 border-[#ea1100]"><p class="text-xs text-gray-500 uppercase">Variacion vs Plan</p><p class="text-2xl font-bold ${cvar(T.vr)}">${money(T.vr)}</p><p class="text-xs text-gray-500">${rows.length} tiendas</p></div>`;
 
   // grafica mensual (siempre todos los meses del set filtrado)
@@ -207,8 +237,8 @@ function render(){
   const ly=MESES.map((_,i)=>sum(base.map(t=>t.ly[i])));
   const crec=MESES.map((_,i)=>ly[i]?(real[i]/ly[i]-1)*100:null);
   $("chartTitle").textContent="Comportamiento mensual - "+DATA.cuentas[$("cuenta").value].titulo;
-  const bg=MESES.map((_,i)=>i===m?"#ffb703":"#ffc220");
-  const bb=MESES.map((_,i)=>i===m?"#0b1f3a":"#0053e2");
+  const bg=MESES.map((_,i)=>(!todosMeses && meses.includes(i))?"#ffb703":"#ffc220");
+  const bb=MESES.map((_,i)=>(!todosMeses && meses.includes(i))?"#0b1f3a":"#0053e2");
   if(chart)chart.destroy();
   chart=new Chart($("chartMes"),{data:{labels:MESES,datasets:[
     {type:"bar",label:"Real (TY)",data:real,backgroundColor:bb,yAxisID:"y",order:2},
@@ -221,7 +251,7 @@ function render(){
 
   // cuadro por Sr Manager
   const bySr={};
-  base.forEach(t=>{const v=vals(t,m);const e=bySr[t.sr]||(bySr[t.sr]={sr:t.sr,n:0,ly:0,ty:0,plan:0});e.n++;e.ly+=v.ly;e.ty+=v.ty;e.plan+=v.plan;});
+  base.forEach(t=>{const v=vals(t,meses);const e=bySr[t.sr]||(bySr[t.sr]={sr:t.sr,n:0,ly:0,ty:0,plan:0});e.n++;e.ly+=v.ly;e.ty+=v.ty;e.plan+=v.plan;});
   let srRows=Object.values(bySr).map(e=>({...e,...met(e)}));
   srRows.sort((a,b)=>{const x=a[sortSr],y=b[sortSr];return typeof x==="string"?dirSr*x.localeCompare(y):dirSr*((x??-1e15)-(y??-1e15));});
   $("titSr").textContent="Resumen por Gerente Senior - "+periodo;
@@ -262,7 +292,7 @@ function render(){
 $("controlable").addEventListener("change",()=>{poblarCuenta();poblarSr();poblarFormato();render();});
 $("cuenta").addEventListener("change",()=>{poblarSr();poblarFormato();render();});
 $("formato").addEventListener("change",render);
-$("mes").addEventListener("change",render);
+$("mes").addEventListener("change",mesOnChange);
 $("sr").addEventListener("change",render);
 $("buscar").addEventListener("input",render);
 document.querySelectorAll("th.sortable").forEach(th=>th.addEventListener("click",()=>{
