@@ -13,7 +13,7 @@ th.sortable:hover{background:#0047c2}</style></head>
 <p class="text-blue-100 text-sm">Dashboard interactivo &middot; TY vs LY vs Plan &middot; Walmart CAM Costa Rica</p>
 </div>
 <div class="text-right text-xs text-blue-100 whitespace-nowrap">
-Actualización: 25/08/2026 20:32
+Actualización: 25/08/2026 20:38
 </div>
 </div></header>
 
@@ -129,7 +129,7 @@ const pct = x => x===null ? "&mdash;" : (x*100).toFixed(1) + "%";
 const sum = a => a.reduce((s,v)=>s+v,0);
 
 function ccre(x){ if(x===null)return"text-gray-400"; if(x<=0)return"text-[#2a8703] font-semibold"; if(x<=0.15)return"text-[#995213] font-semibold"; return"text-[#ea1100] font-semibold"; }
-function calc(x){ if(x===null)return"text-gray-400"; if(x>=1)return"text-[#2a8703] font-semibold"; if(x>=0.9)return"text-[#995213] font-semibold"; return"text-[#ea1100] font-semibold"; }
+function calc(x){ if(x===null)return"text-gray-400"; if(x<=1)return"text-[#2a8703] font-semibold"; if(x<=1.1)return"text-[#995213] font-semibold"; return"text-[#ea1100] font-semibold"; }
 function cvar(x){ return x>0?"text-[#ea1100] font-semibold":(x<0?"text-[#2a8703] font-semibold":"text-gray-500"); }
 
 // formato = macro-formato del negocio: MaxiPali (MP/MAXI) = Bodegas; resto = Descuentos
@@ -144,7 +144,7 @@ function vals(t,m){
   return {ly:t.ly[m],ty:t.real[m],plan:t.plan[m]};
 }
 function met(v){
-  return {...v, crec:v.ly?v.ty/v.ly-1:null, alc:v.ty?v.plan/v.ty:null, vr:v.ty-v.plan};
+  return {...v, crec:v.ly?v.ty/v.ly-1:null, alc:v.plan?v.ty/v.plan:null, vr:v.ty-v.plan};
 }
 
 function tiendasFiltradas(){
@@ -198,7 +198,7 @@ function render(){
   $("kpis").innerHTML=`
    <div class="bg-white rounded-xl shadow p-4 border-l-4 border-[#0053e2]"><p class="text-xs text-gray-500 uppercase">Gasto TY (${periodo})</p><p class="text-2xl font-bold text-[#0053e2]">${money(T.ty)}</p><p class="text-xs text-gray-500">LY ${money(T.ly)} &middot; Plan ${money(T.plan)}</p></div>
    <div class="bg-white rounded-xl shadow p-4 border-l-4 border-[#0b1f3a]"><p class="text-xs text-gray-500 uppercase">Crecimiento vs LY</p><p class="text-2xl font-bold ${ccre(T.crec)}">${pct(T.crec)}</p><p class="text-xs text-gray-500">TY ${money(T.ty)} vs LY ${money(T.ly)}</p></div>
-   <div class="bg-white rounded-xl shadow p-4 border-l-4 border-[#ffc220]"><p class="text-xs text-gray-500 uppercase">Alcance (logro)</p><p class="text-2xl font-bold ${calc(T.alc)}">${pct(T.alc)}</p><p class="text-xs text-gray-500">Plan/Real</p></div>
+   <div class="bg-white rounded-xl shadow p-4 border-l-4 border-[#ffc220]"><p class="text-xs text-gray-500 uppercase">Alcance (logro)</p><p class="text-2xl font-bold ${calc(T.alc)}">${pct(T.alc)}</p><p class="text-xs text-gray-500">Real/Plan</p></div>
    <div class="bg-white rounded-xl shadow p-4 border-l-4 border-[#ea1100]"><p class="text-xs text-gray-500 uppercase">Variacion vs Plan</p><p class="text-2xl font-bold ${cvar(T.vr)}">${money(T.vr)}</p><p class="text-xs text-gray-500">${rows.length} tiendas</p></div>`;
 
   // grafica mensual (siempre todos los meses del set filtrado)
