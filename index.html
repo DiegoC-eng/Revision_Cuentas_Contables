@@ -17,7 +17,7 @@ th.sortable:hover{background:#0047c2}</style></head>
 <button id="btnExportar" type="button" class="bg-white hover:bg-green-50 text-[#008000] text-sm font-semibold px-4 py-2 rounded-lg shadow inline-flex items-center gap-2">
 <span>&#11015;&#65039;</span> Exportar a Excel
 </button>
-<span>Actualización: 24/09/2026 09:14</span>
+<span>Actualización: 24/09/2026 09:30</span>
 </div>
 </div></header>
 
@@ -32,10 +32,16 @@ th.sortable:hover{background:#0047c2}</style></head>
       <option value="no">No</option>
     </select>
   </div>
-  <div>
-    <label class="block text-xs font-semibold text-gray-500 uppercase mb-1" for="cuenta">Cuenta</label>
-    <input id="buscarCuenta" type="text" placeholder="Buscar por nombre o # de cuenta..." class="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-xs mb-1 focus:ring-2 focus:ring-[#0053e2] focus:outline-none">
-    <select id="cuenta" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#0053e2] focus:outline-none"></select>
+  <div class="relative">
+    <label class="block text-xs font-semibold text-gray-500 uppercase mb-1" for="cuentaBtn">Cuenta</label>
+    <button type="button" id="cuentaBtn" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white text-left flex items-center justify-between gap-2 focus:ring-2 focus:ring-[#0053e2] focus:outline-none">
+      <span id="cuentaLabel" class="truncate"></span><span class="text-gray-400">&#9662;</span>
+    </button>
+    <select id="cuenta" class="hidden"></select>
+    <div id="cuentaPanel" class="hidden absolute z-20 mt-1 w-80 bg-white border border-gray-300 rounded-lg shadow-lg p-2">
+      <input id="cuentaBuscar" type="text" placeholder="Buscar por nombre o # de cuenta..." class="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-xs mb-2 focus:ring-2 focus:ring-[#0053e2] focus:outline-none">
+      <div id="cuentaLista" class="max-h-64 overflow-y-auto divide-y divide-gray-100"></div>
+    </div>
   </div>
   <div>
     <label class="block text-xs font-semibold text-gray-500 uppercase mb-1" for="formato">Formato</label>
@@ -141,6 +147,10 @@ const DATA = {"meses": ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", 
 const MESES = DATA.meses;
 let sortTd="ty", dirTd=-1, sortSr="ty", dirSr=-1;
 let expandedSr = new Set();
+let srDetalleSort = {};
+function getSrDetSort(sr){
+  return srDetalleSort[sr] || (srDetalleSort[sr]={k:"ty",dir:-1});
+}
 
 const $ = id => document.getElementById(id);
 const money = x => "$" + Math.round(x).toLocaleString("en-US");
@@ -180,15 +190,20 @@ function tiendasFiltradas(){
 function poblarCuenta(){
   const ctrl=$("controlable").value;
   const cur=$("cuenta").value;
-  const q=$("buscarCuenta").value.trim().toUpperCase();
+  const q=$("cuentaBuscar").value.trim().toUpperCase();
   let claves=Object.keys(DATA.cuentas).filter(k=>(DATA.cuentas[k].controlable?"si":"no")===ctrl);
   if(q) claves=claves.filter(k=>k.toUpperCase().includes(q)||DATA.cuentas[k].titulo.toUpperCase().includes(q));
   if(claves.length===0){
     $("cuenta").innerHTML='<option value="">— Sin coincidencias —</option>';
+    $("cuentaLista").innerHTML='<div class="px-3 py-4 text-xs text-gray-400 text-center">Sin cuentas que coincidan</div>';
+    $("cuentaLabel").textContent="— Sin coincidencias —";
     return;
   }
+  const activo=claves.includes(cur)?cur:claves[0];
   $("cuenta").innerHTML=claves.map(k=>`<option value="${k}">${k} &mdash; ${DATA.cuentas[k].titulo}</option>`).join("");
-  if(claves.includes(cur)) $("cuenta").value=cur;
+  $("cuenta").value=activo;
+  $("cuentaLista").innerHTML=claves.map(k=>`<div class="cuentaItem px-3 py-2 text-sm rounded cursor-pointer hover:bg-[#eef4ff] ${k===activo?'bg-[#eef4ff] font-semibold text-[#0053e2]':''}" data-k="${escAttr(k)}">${k} &mdash; ${DATA.cuentas[k].titulo}</div>`).join("");
+  $("cuentaLabel").textContent=`${activo} — ${DATA.cuentas[activo].titulo}`;
 }
 
 function poblarSr(){
@@ -310,15 +325,21 @@ function render(){
     <td class="px-3 py-2 text-right ${calc(r.alc)}">${pct(r.alc)}</td>
     <td class="px-3 py-2 text-right ${cvar(r.vr)}">${money(r.vr)}</td></tr>`;
     if(!abierto) return principal;
-    const tiendasSr=rows.filter(x=>x.sr===r.sr).sort((a,b)=>b.ty-a.ty);
+    const st=getSrDetSort(r.sr);
+    const tiendasSr=rows.filter(x=>x.sr===r.sr).sort((a,b)=>{
+      const x=a[st.k],y=b[st.k];
+      return typeof x==="string"?st.dir*x.localeCompare(y):st.dir*((x??-1e15)-(y??-1e15));
+    });
+    const flecha=k=>st.k===k?(st.dir===1?" &#9650;":" &#9660;"):"";
+    const th=(k,label,align)=>`<th class="px-2 py-1 ${align} srDetSort cursor-pointer select-none hover:bg-[#d1d5db]" data-sr="${escAttr(r.sr)}" data-k="${k}">${label}${flecha(k)}</th>`;
     const detalle=`<tr class="bg-[#f5f6fa]"><td colspan="8" class="px-3 py-3">
       <div class="rounded-lg border border-gray-200 overflow-hidden">
       <table class="w-full text-xs">
         <thead class="bg-[#e5e7eb] text-[#374151] uppercase text-[10px]"><tr>
-          <th class="px-2 py-1 text-left">Tienda</th><th class="px-2 py-1 text-left">Ceco</th>
-          <th class="px-2 py-1 text-right">Gasto LY</th><th class="px-2 py-1 text-right">Gasto TY</th>
-          <th class="px-2 py-1 text-right">Plan</th><th class="px-2 py-1 text-right">Crec. %</th>
-          <th class="px-2 py-1 text-right">Alc. %</th><th class="px-2 py-1 text-right">Var. $</th></tr></thead>
+          ${th("tienda","Tienda","text-left")}${th("ceco","Ceco","text-left")}
+          ${th("ly","Gasto LY","text-right")}${th("ty","Gasto TY","text-right")}
+          ${th("plan","Plan","text-right")}${th("crec","Crec. %","text-right")}
+          ${th("alc","Alc. %","text-right")}${th("vr","Var. $","text-right")}</tr></thead>
         <tbody>${tiendasSr.map(t=>`<tr class="border-t border-gray-200">
           <td class="px-2 py-1 uppercase">${t.tienda}</td><td class="px-2 py-1 text-gray-500">${t.ceco}</td>
           <td class="px-2 py-1 text-right">${money(t.ly)}</td><td class="px-2 py-1 text-right font-semibold text-[#0053e2]">${money(t.ty)}</td>
@@ -387,8 +408,15 @@ function exportarExcel(){
 $("btnExportar").addEventListener("click",exportarExcel);
 
 $("mesBtn").addEventListener("click",e=>{e.stopPropagation();$("mesPanel").classList.toggle("hidden");});
+$("cuentaBtn").addEventListener("click",e=>{
+  e.stopPropagation();
+  const abrir=$("cuentaPanel").classList.contains("hidden");
+  $("cuentaPanel").classList.toggle("hidden");
+  if(abrir) $("cuentaBuscar").focus();
+});
 document.addEventListener("click",e=>{
   if(!$("mesBtn").contains(e.target)&&!$("mesPanel").contains(e.target)) $("mesPanel").classList.add("hidden");
+  if(!$("cuentaBtn").contains(e.target)&&!$("cuentaPanel").contains(e.target)) $("cuentaPanel").classList.add("hidden");
 });
 $("mesTodos").addEventListener("change",()=>{
   document.querySelectorAll(".mesChk").forEach(c=>c.checked=$("mesTodos").checked);
@@ -398,18 +426,33 @@ $("mesOpciones").addEventListener("change",e=>{
   if(e.target.classList.contains("mesChk")){ actualizarLabelMes(); render(); }
 });
 $("controlable").addEventListener("change",()=>{poblarCuenta();poblarSr();poblarFormato();poblarDirector();render();});
-$("buscarCuenta").addEventListener("input",()=>{poblarCuenta();poblarSr();poblarFormato();poblarDirector();render();});
-$("cuenta").addEventListener("change",()=>{poblarSr();poblarFormato();poblarDirector();render();});
+$("cuentaBuscar").addEventListener("input",()=>{poblarCuenta();poblarSr();poblarFormato();poblarDirector();render();});
+$("cuentaLista").addEventListener("click",e=>{
+  const item=e.target.closest(".cuentaItem");
+  if(!item) return;
+  $("cuenta").value=item.dataset.k;
+  poblarCuenta();poblarSr();poblarFormato();poblarDirector();render();
+  $("cuentaPanel").classList.add("hidden");
+});
 $("formato").addEventListener("change",render);
 $("sr").addEventListener("change",()=>{poblarDirector();render();});
 $("director").addEventListener("change",()=>{poblarSr();render();});
 $("buscar").addEventListener("input",render);
 $("tbodySr").addEventListener("click",e=>{
   const btn=e.target.closest(".srToggle");
-  if(!btn) return;
-  const sr=btn.dataset.sr;
-  if(expandedSr.has(sr)) expandedSr.delete(sr); else expandedSr.add(sr);
-  render();
+  if(btn){
+    const sr=btn.dataset.sr;
+    if(expandedSr.has(sr)) expandedSr.delete(sr); else expandedSr.add(sr);
+    render();
+    return;
+  }
+  const th=e.target.closest(".srDetSort");
+  if(th){
+    const sr=th.dataset.sr, k=th.dataset.k, isTxt=(k==="tienda"||k==="ceco");
+    const st=getSrDetSort(sr);
+    if(st.k===k) st.dir*=-1; else { st.k=k; st.dir=isTxt?1:-1; }
+    render();
+  }
 });
 $("btnToggleAllSr").addEventListener("click",()=>{
   const nombres=ultimo.srRows.map(r=>r.sr);
