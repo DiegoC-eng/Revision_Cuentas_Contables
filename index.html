@@ -17,7 +17,7 @@ th.sortable:hover{background:#0047c2}</style></head>
 <button id="btnExportar" type="button" class="bg-white hover:bg-green-50 text-[#008000] text-sm font-semibold px-4 py-2 rounded-lg shadow inline-flex items-center gap-2">
 <span>&#11015;&#65039;</span> Exportar a Excel
 </button>
-<span>Actualización: 24/09/2026 10:00</span>
+<span>Actualización: 24/09/2026 10:23</span>
 </div>
 </div></header>
 
@@ -143,14 +143,12 @@ th.sortable:hover{background:#0047c2}</style></head>
 <!-- Comentarios / Observaciones -->
 <section class="bg-white rounded-xl shadow p-6">
   <h2 class="text-lg font-bold text-[#0b1f3a] mb-1">Comentarios / Observaciones</h2>
-  <p class="text-xs text-gray-400 mb-4">Tu comentario se guarda junto con la cuenta, tienda/Market Manager y periodo que tenías filtrado en este momento.</p>
-  <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
-    <input id="comentNombre" type="text" placeholder="Tu nombre" class="md:col-span-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#0053e2] focus:outline-none">
-    <textarea id="comentTexto" placeholder="Escribe tu comentario u observación..." rows="2" class="md:col-span-3 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#0053e2] focus:outline-none"></textarea>
-  </div>
-  <div class="flex items-center justify-between mt-3">
-    <span id="comentEstado" class="text-xs text-gray-400"></span>
-    <button id="btnComentEnviar" type="button" class="bg-[#008000] hover:bg-green-700 text-white text-sm font-semibold px-5 py-2 rounded-lg shadow disabled:opacity-50">Enviar</button>
+  <p class="text-xs text-gray-400 mb-4">Completá el formulario con tu nombre, el comentario, y la cuenta/tienda/Market Manager/periodo que estabas revisando arriba.</p>
+  <div id="comentFormWrap">
+    <div id="comentSinConfigurar" class="text-xs text-gray-400 bg-gray-50 border border-dashed border-gray-300 rounded-lg p-4 text-center">
+      Formulario en configuración — disponible pronto.
+    </div>
+    <iframe id="comentIframe" class="hidden w-full border-0 rounded-lg" style="height:600px" src="" allowfullscreen webkitallowfullscreen mozallowfullscreen msallowfullscreen></iframe>
   </div>
 </section>
 
@@ -481,46 +479,9 @@ document.querySelectorAll("th.sortable").forEach(th=>th.addEventListener("click"
   render();}));
 
 const COMENTARIOS_FLOW_URL = "";
-async function enviarComentario(){
-  const nombre=$("comentNombre").value.trim();
-  const texto=$("comentTexto").value.trim();
-  const estado=$("comentEstado");
-  if(!nombre||!texto){
-    estado.textContent="Completa tu nombre y el comentario.";
-    estado.className="text-xs text-[#ea1100]";
-    return;
-  }
-  if(!COMENTARIOS_FLOW_URL){
-    estado.textContent="Formulario no configurado todavia (falta URL del flujo). Avisa a Diego.";
-    estado.className="text-xs text-[#ea1100]";
-    return;
-  }
-  const payload={
-    nombre, comentario:texto,
-    cuenta: ultimo.cuentaTitulo ? `${$("cuenta").value} — ${ultimo.cuentaTitulo}` : "",
-    tienda: $("buscar").value.trim(),
-    marketManager: $("sr").value==="__ALL__" ? "" : $("sr").value,
-    periodo: ultimo.periodo || "",
-  };
-  $("btnComentEnviar").disabled=true;
-  estado.textContent="Enviando...";
-  estado.className="text-xs text-gray-400";
-  try{
-    const resp=await fetch(COMENTARIOS_FLOW_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
-    if(!resp.ok) throw new Error("HTTP "+resp.status);
-    estado.textContent="Comentario enviado. ¡Gracias!";
-    estado.className="text-xs text-[#2a8703] font-semibold";
-    $("comentNombre").value=""; $("comentTexto").value="";
-  }catch(err){
-    estado.textContent="No se pudo enviar. Intenta de nuevo mas tarde.";
-    estado.className="text-xs text-[#ea1100]";
-  }finally{
-    $("btnComentEnviar").disabled=false;
-  }
-}
-$("btnComentEnviar").addEventListener("click",enviarComentario);
-if(!COMENTARIOS_FLOW_URL){
-  $("comentEstado").textContent="(Formulario en configuracion — disponible pronto)";
+if(COMENTARIOS_FLOW_URL){
+  $("comentIframe").classList.remove("hidden");
+  $("comentSinConfigurar").classList.add("hidden");
 }
 
 poblarCuenta(); poblarMes(); poblarSr(); poblarFormato(); poblarDirector(); actualizarLabelMes(); render();
