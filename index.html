@@ -17,7 +17,7 @@ th.sortable:hover{background:#0047c2}</style></head>
 <button id="btnExportar" type="button" class="bg-white hover:bg-green-50 text-[#008000] text-sm font-semibold px-4 py-2 rounded-lg shadow inline-flex items-center gap-2">
 <span>&#11015;&#65039;</span> Exportar a Excel
 </button>
-<span>Actualización: 24/09/2026 12:38</span>
+<span>Actualización: 24/09/2026 12:47</span>
 </div>
 </div></header>
 
@@ -143,14 +143,12 @@ th.sortable:hover{background:#0047c2}</style></head>
 <!-- Comentarios / Observaciones -->
 <section class="bg-white rounded-xl shadow p-6">
   <h2 class="text-lg font-bold text-[#0b1f3a] mb-1">Comentarios / Observaciones</h2>
-  <p class="text-xs text-gray-400 mb-4">Tu comentario se guarda junto con la cuenta, tienda/Market Manager y periodo que tenías filtrado en este momento.</p>
-  <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
-    <input id="comentNombre" type="text" placeholder="Tu nombre" class="md:col-span-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#0053e2] focus:outline-none">
-    <textarea id="comentTexto" placeholder="Escribe tu comentario u observación..." rows="2" class="md:col-span-3 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#0053e2] focus:outline-none"></textarea>
-  </div>
-  <div class="flex items-center justify-between mt-3">
-    <span id="comentEstado" class="text-xs text-gray-400"></span>
-    <button id="btnComentEnviar" type="button" class="bg-[#008000] hover:bg-green-700 text-white text-sm font-semibold px-5 py-2 rounded-lg shadow disabled:opacity-50">Enviar</button>
+  <div class="flex items-start gap-3 bg-[#eef4ff] border border-[#bcd6ff] rounded-lg p-4 text-sm text-[#0b1f3a]">
+    <div>
+      <p class="font-semibold mb-1">¿Querés dejar un comentario u observación?</p>
+      <p>Seleccioná (marcá con el mouse) cualquier texto de esta página — por ejemplo el nombre de una cuenta, una tienda o un valor de la tabla — y elegí <strong>"Agregar comentario"</strong> en el menu que aparece. Tu comentario queda guardado, asociado a ese punto exacto del dashboard, y visible para el equipo.</p>
+      <p class="mt-2 text-xs text-[#0053e2]">Esta función solo está disponible viendo el dashboard desde el link oficial de Puppy Share (no en la copia local ni en GitHub Pages).</p>
+    </div>
   </div>
 </section>
 
@@ -479,49 +477,6 @@ document.querySelectorAll("th.sortable").forEach(th=>th.addEventListener("click"
   if(th.dataset.t==="sr"){ if(sortSr===k)dirSr*=-1; else{sortSr=k;dirSr=isTxt?1:-1;} }
   else{ if(sortTd===k)dirTd*=-1; else{sortTd=k;dirTd=isTxt?1:-1;} }
   render();}));
-
-const COMENTARIOS_API_URL = "";
-async function enviarComentario(){
-  const nombre=$("comentNombre").value.trim();
-  const texto=$("comentTexto").value.trim();
-  const estado=$("comentEstado");
-  if(!nombre||!texto){
-    estado.textContent="Completa tu nombre y el comentario.";
-    estado.className="text-xs text-[#ea1100]";
-    return;
-  }
-  if(!COMENTARIOS_API_URL){
-    estado.textContent="Formulario no configurado todavia. Avisa a Diego.";
-    estado.className="text-xs text-[#ea1100]";
-    return;
-  }
-  const payload={
-    nombre, comentario:texto,
-    cuenta: ultimo.cuentaTitulo ? `${$("cuenta").value} — ${ultimo.cuentaTitulo}` : "",
-    tienda: $("buscar").value.trim(),
-    marketManager: $("sr").value==="__ALL__" ? "" : $("sr").value,
-    periodo: ultimo.periodo || "",
-  };
-  $("btnComentEnviar").disabled=true;
-  estado.textContent="Enviando...";
-  estado.className="text-xs text-gray-400";
-  try{
-    const resp=await fetch(COMENTARIOS_API_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
-    if(!resp.ok) throw new Error("HTTP "+resp.status);
-    estado.textContent="Comentario enviado. ¡Gracias!";
-    estado.className="text-xs text-[#2a8703] font-semibold";
-    $("comentNombre").value=""; $("comentTexto").value="";
-  }catch(err){
-    estado.textContent="No se pudo enviar. Intenta de nuevo mas tarde.";
-    estado.className="text-xs text-[#ea1100]";
-  }finally{
-    $("btnComentEnviar").disabled=false;
-  }
-}
-$("btnComentEnviar").addEventListener("click",enviarComentario);
-if(!COMENTARIOS_API_URL){
-  $("comentEstado").textContent="(Formulario en configuracion — disponible pronto)";
-}
 
 poblarCuenta(); poblarMes(); poblarSr(); poblarFormato(); poblarDirector(); actualizarLabelMes(); render();
 </script></body></html>
