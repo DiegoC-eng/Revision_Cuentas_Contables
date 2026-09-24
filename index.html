@@ -17,7 +17,7 @@ th.sortable:hover{background:#0047c2}</style></head>
 <button id="btnExportar" type="button" class="bg-white hover:bg-green-50 text-[#008000] text-sm font-semibold px-4 py-2 rounded-lg shadow inline-flex items-center gap-2">
 <span>&#11015;&#65039;</span> Exportar a Excel
 </button>
-<span>Actualización: 24/09/2026 14:33</span>
+<span>Actualización: 24/09/2026 14:44</span>
 </div>
 </div></header>
 
@@ -125,21 +125,7 @@ th.sortable:hover{background:#0047c2}</style></head>
       3&#65039;&#8419; Hac&eacute; click ah&iacute; y escrib&iacute; tu justificaci&oacute;n en el cuadro que se abre.<br>
       <span class="text-[#0053e2]">Esto solo funciona viendo el dashboard desde el link oficial de Puppy Share.</span>
     </p>
-  </div>
-  <div class="p-4 grid grid-cols-1 md:grid-cols-3 gap-3 border-b border-gray-100">
-    <div>
-      <label class="block text-xs font-semibold text-gray-500 uppercase mb-1" for="mmCuenta">Cuenta Contable</label>
-      <select id="mmCuenta" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#0053e2] focus:outline-none"></select>
-    </div>
-    <div>
-      <label class="block text-xs font-semibold text-gray-500 uppercase mb-1" for="mmSr">Market Manager</label>
-      <select id="mmSr" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm uppercase focus:ring-2 focus:ring-[#0053e2] focus:outline-none">
-        <option value="__ALL__">Todos los Market Managers</option>
-      </select>
-    </div>
-    <div class="flex items-end">
-      <button id="btnMmAplicar" type="button" class="w-full bg-[#ffc220] hover:bg-yellow-500 text-[#0b1f3a] text-sm font-semibold px-4 py-2 rounded-lg shadow">Aplicar filtros</button>
-    </div>
+    <p class="text-xs text-gray-500 mt-2">Esta tabla sigue autom&aacute;ticamente los filtros de <strong>Cuenta, Formato, Director, Market Manager y Buscar</strong> de arriba &mdash; no hace falta elegir nada aparte aqu&iacute;.</p>
   </div>
   <div class="overflow-x-auto">
     <table class="w-full text-sm">
@@ -289,6 +275,7 @@ function render(){
     if(chart){chart.destroy();chart=null;}
     $("tbodySr").innerHTML=""; $("tfootSr").innerHTML="";
     ultimo={rows:[],srRows:[],periodo,cuentaTitulo:"(sin cuenta)"};
+    renderMm();
     return;
   }
   const base=tiendasFiltradas();
@@ -374,6 +361,7 @@ function render(){
     <td class="px-3 py-2 text-right">${pct(T.alc)}</td><td class="px-3 py-2 text-right">${money(T.vr)}</td></tr>`;
 
   ultimo={rows,srRows,periodo,cuentaTitulo:DATA.cuentas[$("cuenta").value].titulo};
+  renderMm();
 }
 
 function filaExportSr(r){
@@ -411,10 +399,10 @@ document.addEventListener("click",e=>{
 });
 $("mesTodos").addEventListener("change",()=>{
   document.querySelectorAll(".mesChk").forEach(c=>c.checked=$("mesTodos").checked);
-  actualizarLabelMes();render();renderMm();
+  actualizarLabelMes();render();
 });
 $("mesOpciones").addEventListener("change",e=>{
-  if(e.target.classList.contains("mesChk")){ actualizarLabelMes(); render(); renderMm(); }
+  if(e.target.classList.contains("mesChk")){ actualizarLabelMes(); render(); }
 });
 $("controlable").addEventListener("change",()=>{poblarCuenta();poblarSr();poblarFormato();poblarDirector();render();});
 $("cuentaBuscar").addEventListener("input",()=>{poblarCuenta();poblarSr();poblarFormato();poblarDirector();render();});
@@ -457,26 +445,11 @@ document.querySelectorAll("th.sortable").forEach(th=>th.addEventListener("click"
   render();}));
 
 // ---- Uso Exclusivo - Market Manager (tiendas con sobregasto vs Plan) ----
-function poblarMmCuenta(){
-  const claves=Object.keys(DATA.cuentas).filter(k=>DATA.cuentas[k].controlable);
-  const cur=$("mmCuenta").value;
-  $("mmCuenta").innerHTML=claves.map(k=>`<option value="${k}">${k} &mdash; ${DATA.cuentas[k].titulo}</option>`).join("");
-  $("mmCuenta").value=claves.includes(cur)?cur:claves[0];
-}
-function poblarMmSr(){
-  const c=$("mmCuenta").value;
-  if(!c||!DATA.cuentas[c]){ $("mmSr").innerHTML='<option value="__ALL__">Todos los Market Managers</option>'; return; }
-  const set=[...new Set(DATA.cuentas[c].tiendas.map(t=>t.sr))].sort();
-  const cur=$("mmSr").value;
-  $("mmSr").innerHTML='<option value="__ALL__">Todos los Market Managers</option>'+set.map(s=>`<option value="${s}">${s}</option>`).join("");
-  $("mmSr").value=set.includes(cur)?cur:"__ALL__";
-}
 function renderMm(){
-  const c=$("mmCuenta").value;
+  const c=$("cuenta").value;
   if(!c||!DATA.cuentas[c]){ $("mmTbody").innerHTML=""; $("mmVacio").classList.remove("hidden"); return; }
-  const sr=$("mmSr").value;
   const meses=mesesSeleccionados();
-  const tiendas=DATA.cuentas[c].tiendas.filter(t=>sr==="__ALL__"||t.sr===sr);
+  const tiendas=tiendasFiltradas();
   const rows=tiendas.map(t=>({tienda:t.tienda,ceco:t.ceco,sr:t.sr,...met(vals(t,meses))}))
     .filter(r=>r.vr>0)
     .sort((a,b)=>b.vr-a.vr);
@@ -499,10 +472,6 @@ function renderMm(){
     <td class="px-3 py-2 text-gray-400 italic" title="Arrastrá el mouse sobre este texto para seleccionarlo. Va a aparecer un boton flotante Add comment cerca de la seleccion -- ahi es donde se escribe, no en esta celda.">&#128337; Arrastrá para seleccionar este texto &#8594; click en "Add comment" para escribir</td></tr>`;
   }).join("");
 }
-$("btnMmAplicar").addEventListener("click",renderMm);
-$("mmCuenta").addEventListener("change",()=>{poblarMmSr();renderMm();});
-$("mmSr").addEventListener("change",renderMm);
 
 poblarCuenta(); poblarMes(); poblarSr(); poblarFormato(); poblarDirector(); actualizarLabelMes(); render();
-poblarMmCuenta(); poblarMmSr(); renderMm();
 </script></body></html>
