@@ -17,7 +17,7 @@ th.sortable:hover{background:#0047c2}</style></head>
 <button id="btnExportar" type="button" class="bg-white hover:bg-green-50 text-[#008000] text-sm font-semibold px-4 py-2 rounded-lg shadow inline-flex items-center gap-2">
 <span>&#11015;&#65039;</span> Exportar a Excel
 </button>
-<span>Actualización: 24/09/2026 12:47</span>
+<span>Actualización: 24/09/2026 13:40</span>
 </div>
 </div></header>
 
@@ -138,6 +138,47 @@ th.sortable:hover{background:#0047c2}</style></head>
       <tfoot id="tfoot" class="bg-[#2a8703] text-white font-bold"></tfoot>
     </table>
   </div>
+</section>
+
+<!-- Uso Exclusivo - Market Manager -->
+<section class="bg-white rounded-xl shadow overflow-hidden border-2 border-[#ffc220]">
+  <div class="bg-[#fff8e6] px-6 py-3 border-b border-[#ffc220]">
+    <h2 class="text-lg font-bold text-[#0b1f3a]">Uso Exclusivo - Market Manager</h2>
+    <p class="text-xs text-gray-500 mt-1">Tiendas con sobregasto (Gasto TY mayor al Plan) para la cuenta y Market Manager elegidos. Para justificar un desvio, seleccioná el texto de esa fila y elegí "Agregar comentario" (función disponible solo en el link oficial de Puppy Share).</p>
+  </div>
+  <div class="p-4 grid grid-cols-1 md:grid-cols-3 gap-3 border-b border-gray-100">
+    <div>
+      <label class="block text-xs font-semibold text-gray-500 uppercase mb-1" for="mmCuenta">Cuenta Contable</label>
+      <select id="mmCuenta" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#0053e2] focus:outline-none"></select>
+    </div>
+    <div>
+      <label class="block text-xs font-semibold text-gray-500 uppercase mb-1" for="mmSr">Market Manager</label>
+      <select id="mmSr" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm uppercase focus:ring-2 focus:ring-[#0053e2] focus:outline-none">
+        <option value="__ALL__">Todos los Market Managers</option>
+      </select>
+    </div>
+    <div class="flex items-end">
+      <button id="btnMmAplicar" type="button" class="w-full bg-[#ffc220] hover:bg-yellow-500 text-[#0b1f3a] text-sm font-semibold px-4 py-2 rounded-lg shadow">Aplicar filtros</button>
+    </div>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="bg-[#0b1f3a] text-white text-xs uppercase tracking-wide">
+        <tr>
+          <th class="px-3 py-2 text-left">Tienda</th>
+          <th class="px-3 py-2 text-left">Ceco</th>
+          <th class="px-3 py-2 text-left">Market Manager</th>
+          <th class="px-3 py-2 text-right">Gasto TY</th>
+          <th class="px-3 py-2 text-right">Plan</th>
+          <th class="px-3 py-2 text-right">Variación $</th>
+          <th class="px-3 py-2 text-right">Variación %</th>
+          <th class="px-3 py-2 text-left">Justificación</th>
+        </tr>
+      </thead>
+      <tbody id="mmTbody"></tbody>
+    </table>
+  </div>
+  <div id="mmVacio" class="hidden text-center text-xs text-gray-400 py-8">Sin tiendas con sobregasto para este filtro.</div>
 </section>
 
 <!-- Comentarios / Observaciones -->
@@ -432,10 +473,10 @@ document.addEventListener("click",e=>{
 });
 $("mesTodos").addEventListener("change",()=>{
   document.querySelectorAll(".mesChk").forEach(c=>c.checked=$("mesTodos").checked);
-  actualizarLabelMes();render();
+  actualizarLabelMes();render();renderMm();
 });
 $("mesOpciones").addEventListener("change",e=>{
-  if(e.target.classList.contains("mesChk")){ actualizarLabelMes(); render(); }
+  if(e.target.classList.contains("mesChk")){ actualizarLabelMes(); render(); renderMm(); }
 });
 $("controlable").addEventListener("change",()=>{poblarCuenta();poblarSr();poblarFormato();poblarDirector();render();});
 $("cuentaBuscar").addEventListener("input",()=>{poblarCuenta();poblarSr();poblarFormato();poblarDirector();render();});
@@ -478,5 +519,53 @@ document.querySelectorAll("th.sortable").forEach(th=>th.addEventListener("click"
   else{ if(sortTd===k)dirTd*=-1; else{sortTd=k;dirTd=isTxt?1:-1;} }
   render();}));
 
+// ---- Uso Exclusivo - Market Manager (tiendas con sobregasto vs Plan) ----
+function poblarMmCuenta(){
+  const claves=Object.keys(DATA.cuentas).filter(k=>DATA.cuentas[k].controlable);
+  const cur=$("mmCuenta").value;
+  $("mmCuenta").innerHTML=claves.map(k=>`<option value="${k}">${k} &mdash; ${DATA.cuentas[k].titulo}</option>`).join("");
+  $("mmCuenta").value=claves.includes(cur)?cur:claves[0];
+}
+function poblarMmSr(){
+  const c=$("mmCuenta").value;
+  if(!c||!DATA.cuentas[c]){ $("mmSr").innerHTML='<option value="__ALL__">Todos los Market Managers</option>'; return; }
+  const set=[...new Set(DATA.cuentas[c].tiendas.map(t=>t.sr))].sort();
+  const cur=$("mmSr").value;
+  $("mmSr").innerHTML='<option value="__ALL__">Todos los Market Managers</option>'+set.map(s=>`<option value="${s}">${s}</option>`).join("");
+  $("mmSr").value=set.includes(cur)?cur:"__ALL__";
+}
+function renderMm(){
+  const c=$("mmCuenta").value;
+  if(!c||!DATA.cuentas[c]){ $("mmTbody").innerHTML=""; $("mmVacio").classList.remove("hidden"); return; }
+  const sr=$("mmSr").value;
+  const meses=mesesSeleccionados();
+  const tiendas=DATA.cuentas[c].tiendas.filter(t=>sr==="__ALL__"||t.sr===sr);
+  const rows=tiendas.map(t=>({tienda:t.tienda,ceco:t.ceco,sr:t.sr,...met(vals(t,meses))}))
+    .filter(r=>r.vr>0)
+    .sort((a,b)=>b.vr-a.vr);
+  if(rows.length===0){
+    $("mmTbody").innerHTML="";
+    $("mmVacio").classList.remove("hidden");
+    return;
+  }
+  $("mmVacio").classList.add("hidden");
+  $("mmTbody").innerHTML=rows.map(r=>{
+    const varPct=r.alc===null?null:r.alc-1;
+    return `<tr class="border-b border-gray-100 hover:bg-[#fff8e6]">
+    <td class="px-3 py-2 font-medium text-[#0b1f3a] uppercase">${r.tienda}</td>
+    <td class="px-3 py-2 text-gray-500">${r.ceco}</td>
+    <td class="px-3 py-2 uppercase">${r.sr}</td>
+    <td class="px-3 py-2 text-right font-semibold text-[#0053e2]">${money(r.ty)}</td>
+    <td class="px-3 py-2 text-right">${money(r.plan)}</td>
+    <td class="px-3 py-2 text-right text-[#ea1100] font-semibold">${money(r.vr)}</td>
+    <td class="px-3 py-2 text-right text-[#ea1100] font-semibold">${pct(varPct)}</td>
+    <td class="px-3 py-2 text-gray-400 italic">Seleccioná esta fila y agregá tu comentario</td></tr>`;
+  }).join("");
+}
+$("btnMmAplicar").addEventListener("click",renderMm);
+$("mmCuenta").addEventListener("change",()=>{poblarMmSr();renderMm();});
+$("mmSr").addEventListener("change",renderMm);
+
 poblarCuenta(); poblarMes(); poblarSr(); poblarFormato(); poblarDirector(); actualizarLabelMes(); render();
+poblarMmCuenta(); poblarMmSr(); renderMm();
 </script></body></html>
