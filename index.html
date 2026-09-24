@@ -17,7 +17,7 @@ th.sortable:hover{background:#0047c2}</style></head>
 <button id="btnExportar" type="button" class="bg-white hover:bg-green-50 text-[#008000] text-sm font-semibold px-4 py-2 rounded-lg shadow inline-flex items-center gap-2">
 <span>&#11015;&#65039;</span> Exportar a Excel
 </button>
-<span>Actualización: 24/09/2026 16:36</span>
+<span>Actualización: 24/09/2026 17:37</span>
 </div>
 </div></header>
 
@@ -120,10 +120,10 @@ th.sortable:hover{background:#0047c2}</style></head>
     <p class="text-xs text-gray-500 mt-1">Tiendas con sobregasto (Gasto TY mayor al Plan) para la cuenta y Market Manager elegidos.</p>
     <p class="text-xs text-[#0b1f3a] mt-2 bg-white border border-[#ffc220] rounded-lg px-3 py-2">
       <strong>&#191;C&oacute;mo justificar un desv&iacute;o? No hay una casilla para escribir directo en la tabla.</strong><br>
-      1&#65039;&#8419; Arrastr&aacute; el mouse sobre el <strong>NOMBRE DE LA TIENDA</strong> (primera columna) de la fila que quer&eacute;s justificar, para que quede resaltado/seleccionado.<br>
+      1&#65039;&#8419; Arrastr&aacute; el mouse sobre <strong>TODO el texto de la primera columna</strong> (tienda + c&oacute;digo de cuenta) de la fila que quer&eacute;s justificar, para que quede resaltado/seleccionado.<br>
       2&#65039;&#8419; Va a aparecer un bot&oacute;n flotante <strong>"Add comment"</strong> cerca de donde seleccionaste.<br>
       3&#65039;&#8419; Hac&eacute; click ah&iacute; y escrib&iacute; tu justificaci&oacute;n en el cuadro que se abre.<br>
-      <span class="text-[#995213] font-semibold">Importante: seleccioná el NOMBRE DE LA TIENDA, no el texto de la columna Justificación -- así el reporte ejecutivo identifica automáticamente a qué tienda corresponde tu comentario.</span><br>
+      <span class="text-[#995213] font-semibold">Importante: seleccioná la celda COMPLETA de la primera columna (incluye el código de cuenta) -- así el reporte ejecutivo identifica automáticamente la tienda Y la cuenta contable exactas de tu comentario, sin adivinar.</span><br>
       <span class="text-[#0053e2]">Esto solo funciona viendo el dashboard desde el link oficial de Puppy Share.</span>
     </p>
     <p class="text-xs text-gray-500 mt-2">Esta tabla sigue autom&aacute;ticamente los filtros de <strong>Cuenta, Formato, Director, Market Manager y Buscar</strong> de arriba &mdash; no hace falta elegir nada aparte aqu&iacute;.</p>
@@ -132,7 +132,7 @@ th.sortable:hover{background:#0047c2}</style></head>
     <table class="w-full text-sm">
       <thead class="bg-[#0b1f3a] text-white text-xs uppercase tracking-wide">
         <tr>
-          <th class="px-3 py-2 text-left">Tienda</th>
+          <th class="px-3 py-2 text-left">Tienda / Cuenta</th>
           <th class="px-3 py-2 text-left">Ceco</th>
           <th class="px-3 py-2 text-left">Market Manager</th>
           <th class="px-3 py-2 text-right">Gasto TY</th>
@@ -463,14 +463,14 @@ function renderMm(){
   $("mmTbody").innerHTML=rows.map(r=>{
     const varPct=r.alc===null?null:r.alc-1;
     return `<tr class="border-b border-gray-100 hover:bg-[#fff8e6]">
-    <td class="px-3 py-2 font-medium text-[#0b1f3a] uppercase" title="Arrastrá el mouse sobre este nombre de tienda para seleccionarlo. Va a aparecer un boton flotante Add comment cerca de la seleccion -- ahi es donde se escribe la justificacion.">${r.tienda} <span class="text-gray-300 normal-case">&#128172;</span></td>
+    <td class="px-3 py-2 font-medium text-[#0b1f3a] uppercase" title="Arrastrá el mouse sobre TODO este texto (tienda + cuenta) para seleccionarlo. Va a aparecer un boton flotante Add comment cerca de la seleccion -- ahi es donde se escribe la justificacion.">${r.tienda} &mdash; Cuenta ${c} <span class="text-gray-300 normal-case">&#128172;</span></td>
     <td class="px-3 py-2 text-gray-500">${r.ceco}</td>
     <td class="px-3 py-2 uppercase">${r.sr}</td>
     <td class="px-3 py-2 text-right font-semibold text-[#0053e2]">${money(r.ty)}</td>
     <td class="px-3 py-2 text-right">${money(r.plan)}</td>
     <td class="px-3 py-2 text-right text-[#ea1100] font-semibold">${money(r.vr)}</td>
     <td class="px-3 py-2 text-right text-[#ea1100] font-semibold">${pct(varPct)}</td>
-    <td class="px-3 py-2 text-gray-400 italic">&#11013;&#65039; Arrastrá y seleccioná el <strong>nombre de la tienda</strong> (columna izquierda) para justificar esta fila</td></tr>`;
+    <td class="px-3 py-2 text-gray-400 italic">&#11013;&#65039; Arrastrá y seleccioná <strong>toda la celda de tienda + cuenta</strong> (columna izquierda) para justificar esta fila</td></tr>`;
   }).join("");
 }
 
