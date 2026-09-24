@@ -17,7 +17,7 @@ th.sortable:hover{background:#0047c2}</style></head>
 <button id="btnExportar" type="button" class="bg-white hover:bg-green-50 text-[#008000] text-sm font-semibold px-4 py-2 rounded-lg shadow inline-flex items-center gap-2">
 <span>&#11015;&#65039;</span> Exportar a Excel
 </button>
-<span>Actualización: 24/09/2026 14:09</span>
+<span>Actualización: 24/09/2026 14:33</span>
 </div>
 </div></header>
 
@@ -117,7 +117,14 @@ th.sortable:hover{background:#0047c2}</style></head>
 <section class="bg-white rounded-xl shadow overflow-hidden border-2 border-[#ffc220]">
   <div class="bg-[#fff8e6] px-6 py-3 border-b border-[#ffc220]">
     <h2 class="text-lg font-bold text-[#0b1f3a]">Uso Exclusivo - Market Manager</h2>
-    <p class="text-xs text-gray-500 mt-1">Tiendas con sobregasto (Gasto TY mayor al Plan) para la cuenta y Market Manager elegidos. Para justificar un desvio, seleccioná el texto de esa fila y elegí "Agregar comentario" (función disponible solo en el link oficial de Puppy Share).</p>
+    <p class="text-xs text-gray-500 mt-1">Tiendas con sobregasto (Gasto TY mayor al Plan) para la cuenta y Market Manager elegidos.</p>
+    <p class="text-xs text-[#0b1f3a] mt-2 bg-white border border-[#ffc220] rounded-lg px-3 py-2">
+      <strong>&#191;C&oacute;mo justificar un desv&iacute;o? No hay una casilla para escribir directo en la tabla.</strong><br>
+      1&#65039;&#8419; Arrastr&aacute; el mouse sobre el texto de la columna <strong>Justificaci&oacute;n</strong> en la fila que quer&eacute;s comentar (para que quede resaltado/seleccionado).<br>
+      2&#65039;&#8419; Va a aparecer un bot&oacute;n flotante <strong>"Add comment"</strong> cerca de donde seleccionaste.<br>
+      3&#65039;&#8419; Hac&eacute; click ah&iacute; y escrib&iacute; tu justificaci&oacute;n en el cuadro que se abre.<br>
+      <span class="text-[#0053e2]">Esto solo funciona viendo el dashboard desde el link oficial de Puppy Share.</span>
+    </p>
   </div>
   <div class="p-4 grid grid-cols-1 md:grid-cols-3 gap-3 border-b border-gray-100">
     <div>
@@ -489,7 +496,7 @@ function renderMm(){
     <td class="px-3 py-2 text-right">${money(r.plan)}</td>
     <td class="px-3 py-2 text-right text-[#ea1100] font-semibold">${money(r.vr)}</td>
     <td class="px-3 py-2 text-right text-[#ea1100] font-semibold">${pct(varPct)}</td>
-    <td class="px-3 py-2 text-gray-400 italic">Seleccioná esta fila y agregá tu comentario</td></tr>`;
+    <td class="px-3 py-2 text-gray-400 italic" title="Arrastrá el mouse sobre este texto para seleccionarlo. Va a aparecer un boton flotante Add comment cerca de la seleccion -- ahi es donde se escribe, no en esta celda.">&#128337; Arrastrá para seleccionar este texto &#8594; click en "Add comment" para escribir</td></tr>`;
   }).join("");
 }
 $("btnMmAplicar").addEventListener("click",renderMm);
